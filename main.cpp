@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <vector>
 
 sf::Vector2f normalise_vector(float w, float h, float dist)
 {
@@ -27,14 +28,16 @@ void circle_constraint(sf::CircleShape &anchor, sf::CircleShape &target, float c
 int main()
 {
     sf::RenderWindow window(sf::VideoMode(800, 600), "Circle Constraints");
-    sf::CircleShape shape(50.f);
-    shape.setFillColor(sf::Color::Green);
-    shape.setPosition(150,150);
 
-    sf::CircleShape follower(50.f);
-    follower.setFillColor(sf::Color::Red);
-    // follower.setPosition(sf::Vector2f(shape.getPosition().x -50, shape.getPosition().y)); 
-
+    std::vector<sf::CircleShape> segments;
+    for (size_t i = 0; i < 3; i++)
+    {
+        sf::CircleShape shape(50.f);
+        shape.setFillColor( i == 0 ? sf::Color::Green : sf::Color::Red);
+        shape.setPosition(150,150);
+        segments.push_back(shape);
+    }
+    
     while (window.isOpen())
     {
         sf::Event event;
@@ -43,30 +46,34 @@ int main()
             if (event.type == sf::Event::Closed)
                 window.close();
         }
-
         // UPDATE
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
         {
-            shape.move(-0.1f, 0.f);
+            segments[0].move(-0.1f, 0.f);
         } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
         {
-            shape.move(0.1f, 0.f);
+            segments[0].move(0.1f, 0.f);
         }
 
          if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
         {
-            shape.move(0.f, -0.1f);
+            segments[0].move(0.f, -0.1f);
         } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
         {
-            shape.move(0.f, 0.1f);
+            segments[0].move(0.f, 0.1f);
         }
 
-        circle_constraint(shape, follower, 100.f);
+        for (size_t i = 1; i < segments.size(); i++)
+        {
+            circle_constraint(segments[i-1], segments[i], 100.f);
+        }
 
         // DRAW
         window.clear();
-        window.draw(follower);
-        window.draw(shape);
+        for (size_t i = 0; i < segments.size(); i++)
+        {
+            window.draw(segments[i]);
+        }
         window.display();
     }
 
