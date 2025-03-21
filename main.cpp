@@ -6,6 +6,9 @@ int main()
     sf::CircleShape shape(50.f);
     shape.setFillColor(sf::Color::Green);
 
+    sf::CircleShape follower(50.f);
+    follower.setFillColor(sf::Color::Red);
+
     while (window.isOpen())
     {
         sf::Event event;
@@ -36,6 +39,7 @@ int main()
         // DRAW
 
         window.clear();
+        window.draw(follower);
         window.draw(shape);
         window.display();
     }
