@@ -72,7 +72,7 @@ int main()
         window.clear();
         for (size_t i = 0; i < segments.size(); i++)
         {
-            window.draw(segments[i]);
+            window.draw(segments[(segments.size() -1)-i]);
         }
         window.display();
     }
