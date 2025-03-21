@@ -7,8 +7,8 @@ sf::Vector2f normalise_vector(float w, float h, float dist)
 
 void circle_constraint(sf::CircleShape &anchor, sf::CircleShape &target, float constraint)
 {
-    float width = anchor.getPosition().x - target.getPosition().x;
-    float height = anchor.getPosition().y - target.getPosition().y;
+    float width = target.getPosition().x - anchor.getPosition().x;
+    float height = target.getPosition().y - anchor.getPosition().y;
     float distance = std::sqrt(width * width + height * height);
     if(distance < constraint){
         return;
@@ -18,7 +18,7 @@ void circle_constraint(sf::CircleShape &anchor, sf::CircleShape &target, float c
     sf::Vector2f unit = normalise_vector(width, height, distance);
 
     // multiply unit vector by constraint
-    sf::Vector2f projection = sf::Vector2f(unit.x * constraint, unit.y * constraint) + target.getPosition();
+    sf::Vector2f projection = sf::Vector2f(unit.x * constraint, unit.y * constraint) + anchor.getPosition();
 
     // constrain follower
     target.setPosition(projection);
@@ -29,9 +29,11 @@ int main()
     sf::RenderWindow window(sf::VideoMode(800, 600), "Circle Constraints");
     sf::CircleShape shape(50.f);
     shape.setFillColor(sf::Color::Green);
+    shape.setPosition(150,150);
 
     sf::CircleShape follower(50.f);
     follower.setFillColor(sf::Color::Red);
+    // follower.setPosition(sf::Vector2f(shape.getPosition().x -50, shape.getPosition().y)); 
 
     while (window.isOpen())
     {
