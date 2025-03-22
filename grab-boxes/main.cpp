@@ -5,7 +5,7 @@
 #include <cmath>
 
 const float SCALE = 30.0f;
-const float PLAYER_SPEED = 5.0f;
+const float PLAYER_SPEED = 0.5f;
 const float GRAB_RADIUS = 50.0f;
 
 struct Box {
@@ -19,7 +19,7 @@ int main() {
 
     // Set up Box2D world
     b2WorldDef worldDef = b2DefaultWorldDef();
-    worldDef.gravity = (b2Vec2){0.0f, -10.0f};
+    worldDef.gravity = (b2Vec2){0.0f, 10.0f};
     b2WorldId worldId = b2CreateWorld(&worldDef);
 
     // Create ground
