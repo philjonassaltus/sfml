@@ -33,19 +33,18 @@ int main() {
     b2CreatePolygonShape(groundId, &groundShapeDef, &groundBox);
 
     // Create a dynamic body
-    b2BodyDef bodyDef;
+    b2BodyDef bodyDef = b2DefaultBodyDef();
     bodyDef.type = b2_dynamicBody;
-    bodyDef.position.Set(0.0f, 4.0f);
-    b2Body* body = world.CreateBody(&bodyDef);
+    bodyDef.position = (b2Vec2){0.0f, 4.0f};
+    b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
 
-    b2PolygonShape dynamicBox;
-    dynamicBox.SetAsBox(1.0f, 1.0f);
+    b2Polygon dynamicBox = b2MakeBox(1.0f, 1.0f);
+    b2ShapeDef shapeDef = b2DefaultShapeDef();
+    shapeDef.density = 1.0f;
+    shapeDef.friction = 0.3f;
+    b2CreatePolygonShape(bodyId, &shapeDef, &dynamicBox);
 
-    b2FixtureDef fixtureDef;
-    fixtureDef.shape = &dynamicBox;
-    fixtureDef.density = 1.0f;
-    fixtureDef.friction = 0.3f;
-    body->CreateFixture(&fixtureDef);
+    int subStepCount = 4;
 
     sf::Clock clock;
 
@@ -59,9 +58,10 @@ int main() {
 
         // Box2D physics step
         float timeStep = clock.restart().asSeconds();
-        int32 velocityIterations = 6;
-        int32 positionIterations = 2;
-        world.Step(timeStep, velocityIterations, positionIterations);
+        b2World_Step(worldId, timeStep, subStepCount);
+        b2Vec2 position = b2Body_GetPosition(bodyId);
+        b2Rot rotation = b2Body_GetRotation(bodyId);
+        printf("%4.2f %4.2f %4.2f\n", position.x, position.y, b2Rot_GetAngle(rotation));
 
         // Update SFML scene
         window.clear();
@@ -69,5 +69,6 @@ int main() {
         window.display();
     }
 
+    b2DestroyWorld(worldId);
     return 0;
 }
