@@ -5,7 +5,7 @@
 #include <cmath>
 
 const float SCALE = 30.0f;
-const float PLAYER_SPEED = 0.5f;
+const float PLAYER_SPEED = 2.0f; // Reduced speed
 const float GRAB_RADIUS = 50.0f;
 
 struct Box {
@@ -14,19 +14,17 @@ struct Box {
 };
 
 int main() {
-    // Create SFML window
     sf::RenderWindow window(sf::VideoMode(800, 600), "SFML & Box2D - Grab Mechanic");
 
-    // Set up Box2D world
+    // Reduce gravity
     b2WorldDef worldDef = b2DefaultWorldDef();
-    worldDef.gravity = (b2Vec2){0.0f, 10.0f};
+    worldDef.gravity = (b2Vec2){0.0f, 3.0f}; // Reduced gravity
     b2WorldId worldId = b2CreateWorld(&worldDef);
 
-    // Create ground
+    // Ground setup
     b2BodyDef groundBodyDef = b2DefaultBodyDef();
     groundBodyDef.position = (b2Vec2){400.0f / SCALE, 570.0f / SCALE};
     b2BodyId groundId = b2CreateBody(worldId, &groundBodyDef);
-
     b2Polygon groundBox = b2MakeBox(400.0f / SCALE, 10.0f / SCALE);
     b2ShapeDef groundShapeDef = b2DefaultShapeDef();
     b2CreatePolygonShape(groundId, &groundShapeDef, &groundBox);
@@ -36,7 +34,7 @@ int main() {
     groundRect.setOrigin(400, 10);
     groundRect.setPosition(400, 570);
 
-    // Create player (green square)
+    // Player (green square)
     b2BodyDef playerDef = b2DefaultBodyDef();
     playerDef.type = b2_dynamicBody;
     playerDef.position = (b2Vec2){400.0f / SCALE, 500.0f / SCALE};
@@ -49,14 +47,15 @@ int main() {
     playerShapeDef.friction = 0.3f;
     b2CreatePolygonShape(playerId, &playerShapeDef, &playerBox);
 
+    // Add damping to slow movement over time
+    b2Body_SetLinearDamping(playerId, 3.0f); 
+
     sf::RectangleShape playerRect(sf::Vector2f(80, 80));
     playerRect.setFillColor(sf::Color::Green);
     playerRect.setOrigin(40, 40);
 
-    // Store dynamic boxes (falling blue squares)
     std::vector<Box> boxes;
 
-    // Physics step settings
     int subStepCount = 4;
     sf::Clock clock;
     bool isGrabbing = false;
@@ -76,7 +75,7 @@ int main() {
         } else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
             velocity.x = PLAYER_SPEED;
         } else {
-            velocity.x = 0; // Stop moving if no key is pressed
+            velocity.x = 0;
         }
         b2Body_SetLinearVelocity(playerId, velocity);
 
@@ -99,7 +98,7 @@ int main() {
         }
 
         // Spawn falling boxes at intervals
-        if (clock.getElapsedTime().asSeconds() > 1.0f) {
+        if (clock.getElapsedTime().asSeconds() > 1.5f) { // Increased interval to slow spawning
             float spawnX = static_cast<float>(rand() % 800);
             b2BodyDef boxDef = b2DefaultBodyDef();
             boxDef.type = b2_dynamicBody;
@@ -111,6 +110,8 @@ int main() {
             shapeDef.density = 1.0f;
             shapeDef.friction = 0.3f;
             b2CreatePolygonShape(boxId, &shapeDef, &boxShape);
+
+            b2Body_SetLinearDamping(boxId, 2.0f); // Slows falling objects
 
             sf::RectangleShape shape(sf::Vector2f(60, 60));
             shape.setFillColor(sf::Color::Blue);
@@ -140,7 +141,7 @@ int main() {
         // Move grabbed box with player
         if (isGrabbing && grabbedBox) {
             b2Vec2 playerPos = b2Body_GetPosition(playerId);
-            b2Body_SetTransform(grabbedBox->bodyId, (b2Vec2){playerPos.x, playerPos.y - (50.0f / SCALE)}, (b2Rot){0});
+            b2Body_SetTransform(grabbedBox->bodyId, (b2Vec2){playerPos.x, playerPos.y - (50.0f / SCALE)}, {0});
         }
 
         // Render scene
