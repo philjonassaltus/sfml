@@ -5,7 +5,7 @@
 #include <cmath>
 
 const float SCALE = 30.0f;
-const float PLAYER_SPEED = 2.0f;
+const float PLAYER_SPEED = 1.0f;
 const float COLLISION_DISTANCE = 60.0f; // Distance to check for collisions
 
 struct Box {
@@ -16,9 +16,22 @@ struct Box {
 int main() {
     sf::RenderWindow window(sf::VideoMode(800, 600), "SFML & Box2C Collision");
 
+    // Load font
+    sf::Font font;
+    if (!font.loadFromFile("/System/Library/Fonts/Supplemental/Arial.ttf")) {
+        std::cerr << "Could not load font!\n";
+        return -1;
+    }
+
+    // Create text
+    sf::Text text("Click to spawn a box!", font, 20);
+    text.setFillColor(sf::Color::White);
+    text.setPosition(10, 10);
+    unsigned int collision_count = 0;
+
     // Create Box2C world
     b2WorldDef worldDef = b2DefaultWorldDef();
-    worldDef.gravity = (b2Vec2){0.0f, -3.0f};
+    worldDef.gravity = (b2Vec2){0.0f, 3.0f};
     b2WorldId worldId = b2CreateWorld(&worldDef);
 
     // Create player (green box)
@@ -101,19 +114,12 @@ int main() {
         playerRect.setPosition(playerPos.x * SCALE, playerPos.y * SCALE);
 
         // Check for collisions manually
-        bool isColliding = false;
         for (auto& box : boxes) {
-            b2Vec2 boxPos = b2Body_GetPosition(box.bodyId);
-            float dist = std::hypot((playerPos.x - boxPos.x) * SCALE, (playerPos.y - boxPos.y) * SCALE);
-            if (dist < COLLISION_DISTANCE) {
-                isColliding = true;
-                break;
-            }
+            playerRect.getGlobalBounds().intersects(box.shape.getGlobalBounds());
+            collision_count += 1;
         }
 
-        if (isColliding) {
-            std::cout << "Player is colliding with a box!\n";
-        }
+        text.setString("Collision Count: " + std::to_string(collision_count));
 
         // Render
         window.clear();
@@ -126,7 +132,7 @@ int main() {
             box.shape.setPosition(pos.x * SCALE, pos.y * SCALE);
             window.draw(box.shape);
         }
-
+        window.draw(text);
         window.display();
     }
 

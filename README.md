@@ -12,4 +12,8 @@ g++ *.cpp -o click-boxes -std=c++17 -lsfml-graphics -lsfml-window -lsfml-system 
 g++ *.cpp -o grab-boxes -std=c++17 -lsfml-graphics -lsfml-window -lsfml-system -lbox2d -L/opt/homebrew/opt/sfml@2/lib -I/opt/homebrew/opt/sfml@2/include -L/opt/homebrew/opt/box2d/lib -I/opt/homebrew/opt/box2d/include
 ./grab-boxes
 
+## collision-detection
+g++ *.cpp -o collision-detection -std=c++17 -lsfml-graphics -lsfml-window -lsfml-system -lbox2d -L/opt/homebrew/opt/sfml@2/lib -I/opt/homebrew/opt/sfml@2/include -L/opt/homebrew/opt/box2d/lib -I/opt/homebrew/opt/box2d/include
+./collision-detection
+
 https://box2d.org/documentation/hello.html
