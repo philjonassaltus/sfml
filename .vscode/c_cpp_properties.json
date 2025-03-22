@@ -6,7 +6,8 @@
             "intelliSenseMode": "macos-clang-x64",
             "includePath": [
                 "${myIncludePath}", 
-            "/opt/homebrew/opt/sfml@2/include"
+                "/opt/homebrew/opt/sfml@2/include",
+                "/opt/homebrew/opt/box2d/include"
         ],
             "defines": ["${myDefines}"],
             "cStandard": "c11",
