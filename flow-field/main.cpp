@@ -9,7 +9,7 @@
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 600;
 const int SQUARE_SIZE = 10;
-const int NUM_BLUE_SQUARES = 50;
+const int NUM_BLUE_SQUARES = 500;
 const int GRID_SIZE = 20; // Size of each cell in the flow field grid
 
 // Directions for grid movement (up, down, left, right)
@@ -96,7 +96,7 @@ public:
 
         // Make sure we don't go out of bounds
         if (cellX < 0 || cellX >= gridWidth || cellY < 0 || cellY >= gridHeight)
-            return sf::Vector2f(0, 0);
+            return sf::Vector2f(0, 0); // Return zero if out of bounds
 
         return flowField[cellX][cellY].direction;
     }
@@ -120,6 +120,13 @@ sf::Vector2f generateRandomEdgePosition() {
     } else { // Right
         return sf::Vector2f(WINDOW_WIDTH, rand() % WINDOW_HEIGHT);
     }
+}
+
+// Function to clamp position inside window bounds
+sf::Vector2f clampToWindowBounds(sf::Vector2f position) {
+    position.x = std::max(0.f, std::min(position.x, (float)WINDOW_WIDTH - SQUARE_SIZE));
+    position.y = std::max(0.f, std::min(position.y, (float)WINDOW_HEIGHT - SQUARE_SIZE));
+    return position;
 }
 
 int main() {
@@ -181,6 +188,9 @@ int main() {
             if (flow != sf::Vector2f(0, 0)) {
                 blueSquare += flow * -0.1f; // Adjust speed
             }
+
+            // Clamp the blue square position to the window bounds
+            blueSquare = clampToWindowBounds(blueSquare);
 
             // Check if a blue square touches the green square
             if (std::abs(blueSquare.x - greenSquare.getPosition().x) < SQUARE_SIZE &&
