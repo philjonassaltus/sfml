@@ -4,13 +4,11 @@
 #include <cstdlib>
 #include <ctime>
 
-// Constants
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 600;
 const int SQUARE_SIZE = 10;
 const int NUM_BLUE_SQUARES = 50;
 
-// Structure for each square's position and flow direction
 struct Square {
     sf::Vector2f position;
     sf::Vector2f velocity;
@@ -18,7 +16,6 @@ struct Square {
     Square(sf::Vector2f pos) : position(pos), velocity(0, 0) {}
 };
 
-// Flow Field Class
 class FlowField {
 public:
     FlowField(int width, int height, int cellSize) : width(width), height(height), cellSize(cellSize) {
