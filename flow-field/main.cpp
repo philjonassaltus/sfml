@@ -1,55 +1,101 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
+#include <queue>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
 
+// Constants
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 600;
 const int SQUARE_SIZE = 10;
 const int NUM_BLUE_SQUARES = 50;
+const int GRID_SIZE = 20; // Size of each cell in the flow field grid
 
-struct Square {
-    sf::Vector2f position;
-    sf::Vector2f velocity;
-
-    Square(sf::Vector2f pos) : position(pos), velocity(0, 0) {}
+// Directions for grid movement (up, down, left, right)
+const sf::Vector2i directions[] = {
+    sf::Vector2i(0, -1),  // Up
+    sf::Vector2i(1, 0),   // Right
+    sf::Vector2i(0, 1),   // Down
+    sf::Vector2i(-1, 0)   // Left
 };
 
+// Structure to store each grid cell's flow vector
+struct FlowFieldCell {
+    sf::Vector2f direction;
+    bool visited = false;
+};
+
+// Flow Field Class
 class FlowField {
 public:
-    FlowField(int width, int height, int cellSize) : width(width), height(height), cellSize(cellSize) {
-        field.resize(width / cellSize, std::vector<sf::Vector2f>(height / cellSize));
-        generateField();
+    FlowField(int width, int height, int cellSize)
+        : width(width), height(height), cellSize(cellSize) {
+        // Calculate number of cells in each dimension
+        gridWidth = width / cellSize;
+        gridHeight = height / cellSize;
+        flowField.resize(gridWidth, std::vector<FlowFieldCell>(gridHeight));
     }
 
-    // Generate the flow field
-    void generateField() {
-        // You can adjust this to make the flow field more interesting
-        for (int i = 0; i < width / cellSize; ++i) {
-            for (int j = 0; j < height / cellSize; ++j) {
-                field[i][j] = sf::Vector2f(rand() % 2 - 1, rand() % 2 - 1);  // Random direction
+    // Generate the flow field based on a given goal position
+    void generateFlowField(sf::Vector2f goal) {
+        // Reset all cells
+        for (int x = 0; x < gridWidth; ++x) {
+            for (int y = 0; y < gridHeight; ++y) {
+                flowField[x][y].visited = false;
+                flowField[x][y].direction = sf::Vector2f(0, 0);
+            }
+        }
+
+        // BFS queue
+        std::queue<sf::Vector2i> queue;
+        sf::Vector2i goalCell(goal.x / cellSize, goal.y / cellSize);
+
+        // Start BFS from the goal position
+        queue.push(goalCell);
+        flowField[goalCell.x][goalCell.y].visited = true;
+
+        // BFS propagation
+        while (!queue.empty()) {
+            sf::Vector2i current = queue.front();
+            queue.pop();
+
+            // For each direction (up, right, down, left)
+            for (const sf::Vector2i& dir : directions) {
+                sf::Vector2i neighbor = current + dir;
+
+                // Check if the neighbor is within bounds
+                if (neighbor.x >= 0 && neighbor.x < gridWidth &&
+                    neighbor.y >= 0 && neighbor.y < gridHeight &&
+                    !flowField[neighbor.x][neighbor.y].visited) {
+
+                    // Set the direction to move from the current cell to the neighbor
+                    flowField[neighbor.x][neighbor.y].direction = sf::Vector2f(dir.x, dir.y);
+                    flowField[neighbor.x][neighbor.y].visited = true;
+
+                    // Add the neighbor to the queue
+                    queue.push(neighbor);
+                }
             }
         }
     }
 
-    // Get the flow vector at a specific position
-    sf::Vector2f getFlowAtPosition(sf::Vector2f position) {
-        int i = position.x / cellSize;
-        int j = position.y / cellSize;
+    // Get the flow direction at a specific position
+    sf::Vector2f getFlowDirection(sf::Vector2f position) {
+        int cellX = position.x / cellSize;
+        int cellY = position.y / cellSize;
 
         // Make sure we don't go out of bounds
-        if (i < 0) i = 0;
-        if (j < 0) j = 0;
-        if (i >= field.size()) i = field.size() - 1;
-        if (j >= field[0].size()) j = field[0].size() - 1;
+        if (cellX < 0 || cellX >= gridWidth || cellY < 0 || cellY >= gridHeight)
+            return sf::Vector2f(0, 0);
 
-        return field[i][j];
+        return flowField[cellX][cellY].direction;
     }
 
 private:
     int width, height, cellSize;
-    std::vector<std::vector<sf::Vector2f>> field;
+    int gridWidth, gridHeight;
+    std::vector<std::vector<FlowFieldCell>> flowField;
 };
 
 // Function to generate a random position on the screen's edge
@@ -74,16 +120,16 @@ int main() {
     sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Flow Field Example");
 
     // Create the flow field
-    FlowField flowField(WINDOW_WIDTH, WINDOW_HEIGHT, 20);
+    FlowField flowField(WINDOW_WIDTH, WINDOW_HEIGHT, GRID_SIZE);
 
     // Create a green square (target)
     sf::RectangleShape greenSquare(sf::Vector2f(SQUARE_SIZE, SQUARE_SIZE));
     greenSquare.setFillColor(sf::Color::Green);
 
     // Create a collection of blue squares (agents)
-    std::vector<Square> blueSquares;
+    std::vector<sf::Vector2f> blueSquares;
     for (int i = 0; i < NUM_BLUE_SQUARES; ++i) {
-        blueSquares.emplace_back(generateRandomEdgePosition());
+        blueSquares.push_back(generateRandomEdgePosition());
     }
 
     // Main loop
@@ -96,34 +142,24 @@ int main() {
                 // Move the green square to the mouse position
                 if (event.mouseButton.button == sf::Mouse::Left) {
                     greenSquare.setPosition(event.mouseButton.x - SQUARE_SIZE / 2, event.mouseButton.y - SQUARE_SIZE / 2);
-                    flowField.generateField(); // Regenerate the flow field on click
+                    flowField.generateFlowField(greenSquare.getPosition()); // Regenerate the flow field on click
                 }
             }
         }
 
         // Update the movement of the blue squares towards the green square
         for (auto& blueSquare : blueSquares) {
-            // Get the flow direction based on the position of the blue square
-            sf::Vector2f flow = flowField.getFlowAtPosition(blueSquare.position);
+            // Get the flow direction at the blue square's current position
+            sf::Vector2f flow = flowField.getFlowDirection(blueSquare);
 
-            // Move towards the green square using the flow field as a guide
-            sf::Vector2f direction = greenSquare.getPosition() - blueSquare.position;
-            float magnitude = std::sqrt(direction.x * direction.x + direction.y * direction.y);
-            if (magnitude > 0) {
-                direction /= magnitude; // Normalize the direction
-            }
-
-            // Update the blue square's velocity based on the flow and direction
-            blueSquare.velocity = flow * 0.1f + direction * 0.5f; // Mix the flow and direction for smoother movement
-
-            // Update position
-            blueSquare.position += blueSquare.velocity;
+            // Move in the direction specified by the flow field
+            blueSquare += flow * 0.5f; // Adjust speed
 
             // Check if a blue square touches the green square
-            if (std::abs(blueSquare.position.x - greenSquare.getPosition().x) < SQUARE_SIZE &&
-                std::abs(blueSquare.position.y - greenSquare.getPosition().y) < SQUARE_SIZE) {
+            if (std::abs(blueSquare.x - greenSquare.getPosition().x) < SQUARE_SIZE &&
+                std::abs(blueSquare.y - greenSquare.getPosition().y) < SQUARE_SIZE) {
                 // Reassign the blue square to a random position on the edge
-                blueSquare.position = generateRandomEdgePosition();
+                blueSquare = generateRandomEdgePosition();
             }
         }
 
@@ -137,7 +173,7 @@ int main() {
         for (const auto& blueSquare : blueSquares) {
             sf::RectangleShape blueSquareShape(sf::Vector2f(SQUARE_SIZE, SQUARE_SIZE));
             blueSquareShape.setFillColor(sf::Color::Blue);
-            blueSquareShape.setPosition(blueSquare.position);
+            blueSquareShape.setPosition(blueSquare);
             window.draw(blueSquareShape);
         }
 
