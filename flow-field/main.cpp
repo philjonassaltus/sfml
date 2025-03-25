@@ -128,8 +128,12 @@ int main() {
 
     // Create a collection of blue squares (agents)
     std::vector<sf::Vector2f> blueSquares;
+    std::vector<sf::RectangleShape> blueSquareShapes;
     for (int i = 0; i < NUM_BLUE_SQUARES; ++i) {
         blueSquares.push_back(generateRandomEdgePosition());
+        sf::RectangleShape blueSquareShape(sf::Vector2f(SQUARE_SIZE, SQUARE_SIZE));
+        blueSquareShape.setFillColor(sf::Color::Blue);
+        blueSquareShapes.push_back(blueSquareShape);
     }
 
     // Main loop
@@ -153,7 +157,7 @@ int main() {
             sf::Vector2f flow = flowField.getFlowDirection(blueSquare);
 
             // Move in the direction specified by the flow field
-            blueSquare += flow * 0.5f; // Adjust speed
+            blueSquare += flow * -0.05f; // Adjust speed
 
             // Check if a blue square touches the green square
             if (std::abs(blueSquare.x - greenSquare.getPosition().x) < SQUARE_SIZE &&
@@ -163,21 +167,16 @@ int main() {
             }
         }
 
-        // Clear screen
         window.clear(sf::Color::White);
-
-        // Draw the green square
         window.draw(greenSquare);
 
         // Draw the blue squares
-        for (const auto& blueSquare : blueSquares) {
-            sf::RectangleShape blueSquareShape(sf::Vector2f(SQUARE_SIZE, SQUARE_SIZE));
-            blueSquareShape.setFillColor(sf::Color::Blue);
-            blueSquareShape.setPosition(blueSquare);
-            window.draw(blueSquareShape);
+        for (size_t i = 0; i < NUM_BLUE_SQUARES; i++)
+        {
+            blueSquareShapes[i].setPosition(blueSquares[i]);
+            window.draw(blueSquareShapes[i]);
         }
 
-        // Display everything
         window.display();
     }
 
