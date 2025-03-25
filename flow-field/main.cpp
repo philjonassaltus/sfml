@@ -24,6 +24,7 @@ const sf::Vector2i directions[] = {
 struct FlowFieldCell {
     sf::Vector2f direction;
     bool visited = false;
+    bool isObstacle = false; // Flag to mark obstacle cells
 };
 
 // Flow Field Class
@@ -64,10 +65,11 @@ public:
             for (const sf::Vector2i& dir : directions) {
                 sf::Vector2i neighbor = current + dir;
 
-                // Check if the neighbor is within bounds
+                // Check if the neighbor is within bounds and not an obstacle
                 if (neighbor.x >= 0 && neighbor.x < gridWidth &&
                     neighbor.y >= 0 && neighbor.y < gridHeight &&
-                    !flowField[neighbor.x][neighbor.y].visited) {
+                    !flowField[neighbor.x][neighbor.y].visited &&
+                    !flowField[neighbor.x][neighbor.y].isObstacle) {
 
                     // Set the direction to move from the current cell to the neighbor
                     flowField[neighbor.x][neighbor.y].direction = sf::Vector2f(dir.x, dir.y);
@@ -77,6 +79,13 @@ public:
                     queue.push(neighbor);
                 }
             }
+        }
+    }
+
+    // Set a cell as an obstacle
+    void setObstacle(int x, int y) {
+        if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight) {
+            flowField[x][y].isObstacle = true;
         }
     }
 
@@ -117,7 +126,7 @@ int main() {
     srand(time(0));
 
     // Create window
-    sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Flow Field Example");
+    sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Flow Field with Obstacles");
 
     // Create the flow field
     FlowField flowField(WINDOW_WIDTH, WINDOW_HEIGHT, GRID_SIZE);
@@ -134,6 +143,18 @@ int main() {
         sf::RectangleShape blueSquareShape(sf::Vector2f(SQUARE_SIZE, SQUARE_SIZE));
         blueSquareShape.setFillColor(sf::Color::Blue);
         blueSquareShapes.push_back(blueSquareShape);
+    }
+
+    // Create obstacles (red squares)
+    std::vector<sf::RectangleShape> redSquareShapes;
+    for (int i = 0; i < 10; ++i) {
+        sf::Vector2f pos(rand() % (WINDOW_WIDTH / GRID_SIZE) * GRID_SIZE, rand() % (WINDOW_HEIGHT / GRID_SIZE) * GRID_SIZE);
+        redSquareShapes.push_back(sf::RectangleShape(sf::Vector2f(GRID_SIZE, GRID_SIZE)));
+        redSquareShapes.back().setFillColor(sf::Color::Red);
+        redSquareShapes.back().setPosition(pos);
+
+        // Set this cell as an obstacle in the flow field
+        flowField.setObstacle(pos.x / GRID_SIZE, pos.y / GRID_SIZE);
     }
 
     // Main loop
@@ -156,8 +177,10 @@ int main() {
             // Get the flow direction at the blue square's current position
             sf::Vector2f flow = flowField.getFlowDirection(blueSquare);
 
-            // Move in the direction specified by the flow field
-            blueSquare += flow * -0.05f; // Adjust speed
+            // Adjust the movement based on the flow direction
+            if (flow != sf::Vector2f(0, 0)) {
+                blueSquare += flow * -0.1f; // Adjust speed
+            }
 
             // Check if a blue square touches the green square
             if (std::abs(blueSquare.x - greenSquare.getPosition().x) < SQUARE_SIZE &&
@@ -170,9 +193,13 @@ int main() {
         window.clear(sf::Color::White);
         window.draw(greenSquare);
 
+        // Draw the red obstacles
+        for (const auto& redSquare : redSquareShapes) {
+            window.draw(redSquare);
+        }
+
         // Draw the blue squares
-        for (size_t i = 0; i < NUM_BLUE_SQUARES; i++)
-        {
+        for (size_t i = 0; i < NUM_BLUE_SQUARES; i++) {
             blueSquareShapes[i].setPosition(blueSquares[i]);
             window.draw(blueSquareShapes[i]);
         }
